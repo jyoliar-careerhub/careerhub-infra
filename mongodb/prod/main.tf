@@ -6,7 +6,7 @@ module "mongodb_atlas_project" {
 
   name = "${var.env}-careerhub"
 
-  organization_id = data.mongodbatlas_roles_org_id.this.id
+  organization_id = data.mongodbatlas_roles_org_id.current.id
 }
 
 module "mongodb_atlas_cluster" {
