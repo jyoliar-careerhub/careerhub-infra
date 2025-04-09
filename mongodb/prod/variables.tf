@@ -6,11 +6,11 @@ variable "region" {
   type = string
 }
 
-variable "atlas_public_key" {
+variable "mongodb_atlas_public_key" {
   type = string
 }
 
-variable "atlas_private_key" {
+variable "mongodb_atlas_private_key" {
   type      = string
   sensitive = true
 }

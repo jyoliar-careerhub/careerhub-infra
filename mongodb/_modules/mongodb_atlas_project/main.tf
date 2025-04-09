@@ -33,7 +33,7 @@ resource "aws_secretsmanager_secret" "admin_db_user" {
   force_overwrite_replica_secret = true
 }
 
-resource "aws_secretsmanager_secret_version" "username" {
+resource "aws_secretsmanager_secret_version" "admin_db_user" {
   secret_id = aws_secretsmanager_secret.admin_db_user.id
   secret_string = jsonencode({
     username = mongodbatlas_database_user.admin_db_user.username

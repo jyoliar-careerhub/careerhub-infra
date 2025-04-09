@@ -1,4 +1,4 @@
-resource "mongodbatlas_advanced_cluster" "example-flex" {
+resource "mongodbatlas_advanced_cluster" "this" {
   project_id   = var.project_id
   name         = var.name
   cluster_type = "REPLICASET"
