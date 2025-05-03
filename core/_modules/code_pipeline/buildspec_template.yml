@@ -10,6 +10,7 @@ phases:
       - echo Build started on `date`
       - echo Building the Docker image...
       - export DATE_TAG=$(date +%Y.%m.%d-%H.%M.%S)
+      - docker build -t ${image_repo_name}:latest .
       - docker image tag ${image_repo_name}:latest ${ecr_domain}/${image_repo_name}:$DATE_TAG
       - docker image tag ${image_repo_name}:latest ${ecr_domain}/${image_repo_name}:latest
 
