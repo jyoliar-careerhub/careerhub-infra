@@ -6,6 +6,10 @@ variable "region" {
   type = string
 }
 
+variable "default_tags" {
+  type = map(string)
+}
+
 variable "mongodb_atlas_public_key" {
   type = string
 }
