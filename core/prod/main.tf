@@ -12,7 +12,7 @@ locals {
 }
 
 resource "aws_codestarconnections_connection" "this" {
-  name          = "${var.env}-github"
+  name          = "${var.env}-careerhub"
   provider_type = "GitHub"
 }
 
