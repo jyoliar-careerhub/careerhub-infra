@@ -77,27 +77,27 @@ module "pod_identity" {
 }
 
 
-# resource "mongodbatlas_database_user" "this" {
-#   for_each = {
-#     for k, v in local.code_pipelines : k => v
-#     if contains(keys(v), "mongodb")
-#   }
+resource "mongodbatlas_database_user" "this" {
+  for_each = {
+    for k, v in local.code_pipelines : k => v
+    if contains(keys(v), "mongodb")
+  }
 
-#   project_id = local.mongodb_outputs.project_id
-#   username   = each.value.role_arn
+  project_id = local.mongodb_outputs.project_id
+  username   = module.pod_identity[each.key].role_arn
 
-#   auth_database_name = "$external"
-#   aws_iam_type       = "ROLE"
+  auth_database_name = "$external"
+  aws_iam_type       = "ROLE"
 
-#   roles {
-#     role_name       = "readWrite"
-#     database_name   = local.mongodb_outputs.mongodb_database_name
-#     collection_name = each.value.mongodb.collection_name
-#   }
+  roles {
+    role_name       = "readWrite"
+    database_name   = local.mongodb_outputs.mongodb_database_name
+    collection_name = each.value.mongodb.collection_name
+  }
 
-#   depends_on = [
-#     module.pod_identity
-#   ]
-# }
+  depends_on = [
+    module.pod_identity
+  ]
+}
 
 
