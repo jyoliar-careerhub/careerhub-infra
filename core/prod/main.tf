@@ -4,35 +4,35 @@ locals {
       cicd_name       = "posting-provider"
       repository_path = "jyoliar-careerhub/careerhub-posting-provider"
     }
-    # posting-service = {
-    #   cicd_name       = "posting-service"
-    #   repository_path = "jyoliar-careerhub/careerhub-posting-service"
-    # }
+    posting-service = {
+      cicd_name       = "posting-service"
+      repository_path = "jyoliar-careerhub/careerhub-posting-service"
+    }
 
-    # posting-skillscanner = {
-    #   cicd_name       = "posting-skillscanner"
-    #   repository_path = "jyoliar-careerhub/careerhub-posting-skillscanner"
-    # }
-    # review-crawler = {
-    #   cicd_name       = "review-crawler"
-    #   repository_path = "jyoliar-careerhub/careerhub-review-crawler"
-    # }
-    # review-service = {
-    #   cicd_name       = "review-service"
-    #   repository_path = "jyoliar-careerhub/careerhub-review-service"
-    # }
-    # userinfo-service = {
-    #   cicd_name       = "userinfo-service"
-    #   repository_path = "jyoliar-careerhub/careerhub-userinfo-service"
-    # }
-    # api-composer = {
-    #   cicd_name       = "api-composer"
-    #   repository_path = "jyoliar-careerhub/careerhub-api-composer"
-    # }
-    # auth-service = {
-    #   cicd_name       = "auth-service"
-    #   repository_path = "jyoliar-careerhub/auth-service"
-    # }
+    posting-skillscanner = {
+      cicd_name       = "posting-skillscanner"
+      repository_path = "jyoliar-careerhub/careerhub-posting-skillscanner"
+    }
+    review-crawler = {
+      cicd_name       = "review-crawler"
+      repository_path = "jyoliar-careerhub/careerhub-review-crawler"
+    }
+    review-service = {
+      cicd_name       = "review-service"
+      repository_path = "jyoliar-careerhub/careerhub-review-service"
+    }
+    userinfo-service = {
+      cicd_name       = "userinfo-service"
+      repository_path = "jyoliar-careerhub/careerhub-userinfo-service"
+    }
+    api-composer = {
+      cicd_name       = "api-composer"
+      repository_path = "jyoliar-careerhub/careerhub-api-composer"
+    }
+    auth-service = {
+      cicd_name       = "auth-service"
+      repository_path = "jyoliar-careerhub/auth-service"
+    }
   }
 }
 
