@@ -85,6 +85,7 @@ data "aws_iam_policy_document" "codebuild_policy_doc" {
       "${aws_s3_bucket.codebuild_bucket.arn}/*",
     ]
   }
+
 }
 
 data "aws_iam_policy_document" "codebuild_assume_role_policy_doc" {
@@ -182,7 +183,7 @@ resource "aws_codebuild_project" "codebuild_project" {
     type = "CODEPIPELINE"
     buildspec = templatefile("${path.module}/buildspec_template.yml", {
       region          = data.aws_region.current.name
-      ecr_domain      = aws_ecr_repository.ecr_repo.repository_url
+      ecr_domain      = split("/", aws_ecr_repository.ecr_repo.repository_url)[0]
       image_repo_name = aws_ecr_repository.ecr_repo.name
     })
   }
