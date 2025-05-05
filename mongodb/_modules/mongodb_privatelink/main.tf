@@ -5,7 +5,7 @@ data "aws_vpc" "this" {
 resource "mongodbatlas_privatelink_endpoint" "this" {
   project_id    = var.project_id
   provider_name = "AWS"
-  region        = replace(upper(var.region), "-", "_")
+  region        = var.region
 }
 
 resource "aws_security_group" "this" {
@@ -29,8 +29,6 @@ resource "aws_vpc_endpoint" "this" {
   vpc_endpoint_type  = "Interface"
   subnet_ids         = var.subnet_ids
   security_group_ids = [aws_security_group.this.id]
-
-  auto_accept = true
 }
 
 resource "mongodbatlas_privatelink_endpoint_service" "this" {
