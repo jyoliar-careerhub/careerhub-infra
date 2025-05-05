@@ -7,6 +7,7 @@ resource "mongodbatlas_advanced_cluster" "this" {
     region_configs {
       electable_specs {
         instance_size = "M10"
+        node_count    = 3
       }
       provider_name = "AWS"
       region_name   = join("_", split("-", upper(var.region)))
