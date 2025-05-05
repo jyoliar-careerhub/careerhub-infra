@@ -9,7 +9,8 @@ resource "mongodbatlas_privatelink_endpoint" "this" {
 }
 
 resource "aws_security_group" "this" {
-  name = "${var.name}-sg"
+  vpc_id = var.vpc_id
+  name   = "${var.name}-sg"
 }
 
 resource "aws_security_group_rule" "this" {
