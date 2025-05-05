@@ -62,6 +62,28 @@ module "code_pipeline" {
   connection_arn = aws_codestarconnections_connection.this.arn
 }
 
+data "aws_caller_identity" "current" {}
+resource "aws_iam_policy" "careerhub-secrets-reader" {
+  name = "${var.env}-careerhub-secrets-reader"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowSpecificSecret"
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter*"
+        ]
+
+        Resource = [
+          "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${local.eks_outputs.eks_cluster_name}/careerhub/*"
+        ]
+      }
+    ]
+  })
+}
+
 module "pod_identity" {
   for_each = {
     for k, v in local.code_pipelines : k => v
@@ -74,6 +96,7 @@ module "pod_identity" {
   namespace            = "${var.env}-careerhub"
   service_account_name = each.key
   cluster_arn          = local.eks_outputs.eks_cluster_arn
+  policy_arn           = aws_iam_policy.careerhub-secrets-reader.arn
 }
 
 
@@ -98,6 +121,29 @@ resource "mongodbatlas_database_user" "this" {
   depends_on = [
     module.pod_identity
   ]
+}
+
+
+# mongodb privatelink가 생성된 이후 private endpoint가 생성되기 때문에
+# 해당 워크스페이스에서 data source로 가져와야 함
+data "mongodbatlas_advanced_cluster" "this" {
+  project_id = local.mongodb_outputs.project_id
+  name       = local.mongodb_outputs.mongodb_database_name
+}
+
+resource "aws_ssm_parameter" "mongodb_secret" {
+  for_each = {
+    for k, v in local.code_pipelines : k => v
+    if contains(keys(v), "mongodb")
+  }
+
+  name = "/${local.eks_outputs.eks_cluster_name}/careerhub/${each.key}/mongodb"
+  type = "String"
+  value = jsonencode({
+    endpoint   = data.mongodbatlas_advanced_cluster.this.connection_strings
+    collection = each.value.mongodb.collection_name
+  })
+  description = "MongoDB Atlas secret for ${each.key} service"
 }
 
 
