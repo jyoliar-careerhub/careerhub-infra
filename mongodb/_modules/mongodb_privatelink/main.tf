@@ -5,7 +5,7 @@ data "aws_vpc" "this" {
 resource "mongodbatlas_privatelink_endpoint" "this" {
   project_id    = var.project_id
   provider_name = "AWS"
-  region        = var.region
+  region        = replace(upper(var.region), "-", "_")
 }
 
 resource "aws_security_group" "this" {
