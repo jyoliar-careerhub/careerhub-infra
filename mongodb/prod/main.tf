@@ -50,6 +50,11 @@ module "mongodb_atlas_admin" {
   ]
 }
 
+#region별 private endpoint를 허용하기 위해 이 기능을 활성화
+resource "mongodbatlas_private_endpoint_regional_mode" "test" {
+  project_id = module.mongodb_atlas_project.project_id
+  enabled    = true
+}
 module "mongodb_privatelink" {
   source = "../_modules/mongodb_privatelink"
 
