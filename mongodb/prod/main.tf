@@ -61,9 +61,4 @@ module "mongodb_privatelink" {
   project_id = module.mongodb_atlas_project.project_id
 }
 
-# mongodb privatelink가 생성된 이후 private endpoint가 생성되기 때문에
-data "mongodbatlas_advanced_cluster" "this" {
-  project_id = module.mongodb_atlas_project.project_id
-  name       = module.mongodb_atlas_cluster.db_name
-}
 
