@@ -49,3 +49,21 @@ module "mongodb_atlas_admin" {
     }
   ]
 }
+
+module "mongodb_privatelink" {
+  source = "../_modules/mongodb_privatelink"
+
+  name       = "${var.env}-mongodb-privatelink"
+  vpc_id     = local.careerhub_subnets_outputs.vpc_id
+  subnet_ids = local.careerhub_subnets_outputs.private_subnet_ids
+  region     = var.region
+
+  project_id = module.mongodb_atlas_project.project_id
+}
+
+# mongodb privatelink가 생성된 이후 private endpoint가 생성되기 때문에
+data "mongodbatlas_advanced_cluster" "this" {
+  project_id = module.mongodb_atlas_project.project_id
+  name       = module.mongodb_atlas_cluster.db_name
+}
+
