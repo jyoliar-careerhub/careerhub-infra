@@ -5,7 +5,3 @@ output "project_id" {
 output "mongodb_database_name" {
   value = module.mongodb_atlas_cluster.db_name
 }
-
-output "mongodb_private_endpoint" {
-  value = module.mongodb_atlas_cluster.private_endpoint
-}
