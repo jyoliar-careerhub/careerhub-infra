@@ -133,7 +133,7 @@ resource "aws_ssm_parameter" "mongodb_secret" {
     if contains(keys(v), "mongodb")
   }
 
-  name = "/${local.eks_outputs.eks_cluster_name}/careerhub/${each.key}/mongodb"
+  name = "/${local.eks_outputs.eks_cluster_name}/careerhub/${var.env}/${each.key}/mongodb"
   type = "String"
   value = jsonencode({
     endpoint   = data.mongodbatlas_advanced_cluster.this.connection_strings[0].private_endpoint[0].srv_connection_string
