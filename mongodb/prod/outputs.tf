@@ -7,5 +7,5 @@ output "mongodb_database_name" {
 }
 
 output "mongodb_private_endpoint" {
-  value = data.mongodbatlas_advanced_cluster.this.connection_strings[0].private_srv
+  value = module.mongodb_atlas_cluster.private_endpoint
 }
