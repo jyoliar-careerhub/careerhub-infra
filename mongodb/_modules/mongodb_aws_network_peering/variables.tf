@@ -6,11 +6,11 @@ variable "project_id" {
   type = string
 }
 
-variable "container_id" {
+variable "vpc_id" {
   type = string
 }
 
-variable "vpc_id" {
+variable "atlas_cidr_block" {
   type = string
 }
 
