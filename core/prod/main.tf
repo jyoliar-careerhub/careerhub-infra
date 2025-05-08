@@ -117,15 +117,11 @@ resource "mongodbatlas_database_user" "this" {
     database_name   = local.mongodb_outputs.mongodb_database_name
     collection_name = each.value.mongodb.collection_name
   }
-
-  depends_on = [
-    module.pod_identity
-  ]
 }
 
 
 # mongodb privatelink가 생성된 이후 private endpoint가 생성되기 때문에
-# 해당 워크스페이스에서 data source로 가져와야 함
+# 현재 워크스페이스에서 data로 가져와야 함
 data "mongodbatlas_advanced_cluster" "this" {
   project_id = local.mongodb_outputs.project_id
   name       = local.mongodb_outputs.mongodb_database_name
@@ -140,7 +136,7 @@ resource "aws_ssm_parameter" "mongodb_secret" {
   name = "/${local.eks_outputs.eks_cluster_name}/careerhub/${each.key}/mongodb"
   type = "String"
   value = jsonencode({
-    endpoint   = data.mongodbatlas_advanced_cluster.this.connection_strings
+    endpoint   = data.mongodbatlas_advanced_cluster.this.connection_strings[0].private_endpoint[0].srv_connection_string
     collection = each.value.mongodb.collection_name
   })
   description = "MongoDB Atlas secret for ${each.key} service"
