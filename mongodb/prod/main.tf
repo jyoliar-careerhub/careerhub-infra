@@ -50,15 +50,38 @@ module "mongodb_atlas_admin" {
   ]
 }
 
-module "mongodb_privatelink" {
-  source = "../_modules/mongodb_privatelink"
+# module "mongodb_privatelink" {
+#   source = "../_modules/mongodb_privatelink"
 
-  name       = "${var.env}-mongodb-privatelink"
-  vpc_id     = local.careerhub_subnets_outputs.vpc_id
-  subnet_ids = local.careerhub_subnets_outputs.private_subnet_ids
-  region     = var.region
+#   name       = "${var.env}-mongodb-privatelink"
+#   vpc_id     = local.careerhub_subnets_outputs.vpc_id
+#   subnet_ids = local.careerhub_subnets_outputs.private_subnet_ids
+#   region     = var.region
 
-  project_id = module.mongodb_atlas_project.project_id
+#   project_id = module.mongodb_atlas_project.project_id
+# }
+
+data "aws_vpc" "careerhub" {
+  id = local.careerhub_subnets_outputs.vpc_id
 }
 
+module "mongodb_aws_network_peering" {
+  source = "../_modules/mongodb_aws_network_peering"
 
+  region         = var.region
+  project_id     = module.mongodb_atlas_project.project_id
+  container_id   = module.mongodb_atlas_cluster.container_id
+  vpc_id         = local.careerhub_subnets_outputs.vpc_id
+  vpc_cidr_block = data.aws_vpc.careerhub.cidr_block
+  aws_account_id = split(":", data.aws_vpc.careerhub.arn)[4]
+}
+
+# peering 생성 이후 조회되는 private endpoint 정보를 위해
+data "mongodbatlas_advanced_cluster" "this" {
+  project_id = module.mongodb_atlas_project.project_id
+  name       = module.mongodb_atlas_cluster.db_name
+
+  depends_on = [
+    module.mongodb_aws_network_peering,
+  ]
+}
