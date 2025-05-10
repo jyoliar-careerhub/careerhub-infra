@@ -38,6 +38,7 @@ resource "aws_eks_pod_identity_association" "this" {
 }
 
 resource "aws_iam_role_policy_attachment" "this" {
+  count      = var.policy_arn == "" ? 0 : 1
   role       = aws_iam_role.this.name
   policy_arn = var.policy_arn
 }
