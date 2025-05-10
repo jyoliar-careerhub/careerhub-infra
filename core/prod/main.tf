@@ -62,28 +62,6 @@ module "code_pipeline" {
   connection_arn = aws_codestarconnections_connection.this.arn
 }
 
-data "aws_caller_identity" "current" {}
-resource "aws_iam_policy" "careerhub-secrets-reader" {
-  name = "${var.env}-careerhub-secrets-reader"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "AllowSpecificSecret"
-        Effect = "Allow"
-        Action = [
-          "ssm:GetParameter*"
-        ]
-
-        Resource = [
-          "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${local.eks_outputs.eks_cluster_name}/careerhub/*"
-        ]
-      }
-    ]
-  })
-}
-
 module "pod_identity" {
   for_each = {
     for k, v in local.code_pipelines : k => v
@@ -96,7 +74,6 @@ module "pod_identity" {
   namespace            = "${var.env}-careerhub"
   service_account_name = each.key
   cluster_arn          = local.eks_outputs.eks_cluster_arn
-  policy_arn           = aws_iam_policy.careerhub-secrets-reader.arn
 }
 
 
@@ -118,7 +95,6 @@ resource "mongodbatlas_database_user" "this" {
     collection_name = each.value.mongodb.collection_name
   }
 }
-
 
 # mongodb privatelink가 생성된 이후 private endpoint가 생성되기 때문에
 # 현재 워크스페이스에서 data로 가져와야 함
@@ -143,3 +119,35 @@ resource "aws_ssm_parameter" "mongodb_secret" {
 }
 
 
+data "aws_caller_identity" "current" {}
+resource "aws_iam_policy" "careerhub-secrets-reader" {
+  name = "${var.env}-careerhub-secrets-reader"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowSpecificSecret"
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter*"
+        ]
+
+        Resource = [
+          "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${local.eks_outputs.eks_cluster_name}/careerhub/*"
+        ]
+      }
+    ]
+  })
+}
+
+module "role_for_sa" {
+  source = "../_modules/role_for_sa"
+
+  name                  = "${var.env}-careerhub-secrets-reader"
+  eks_oidc_provider_arn = local.eks_outputs.eks_oidc_provider_arn
+  namespace             = "${var.env}-careerhub"
+  service_account_name  = "careerhub-secrets-reader"
+
+  policy_arn = aws_iam_policy.careerhub-secrets-reader.arn
+}

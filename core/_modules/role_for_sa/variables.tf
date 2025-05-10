@@ -2,7 +2,7 @@ variable "name" {
   type = string
 }
 
-variable "cluster_arn" {
+variable "eks_oidc_provider_arn" {
   type = string
 }
 
@@ -15,6 +15,5 @@ variable "service_account_name" {
 }
 
 variable "policy_arn" {
-  type    = string
-  default = ""
+  type = string
 }
