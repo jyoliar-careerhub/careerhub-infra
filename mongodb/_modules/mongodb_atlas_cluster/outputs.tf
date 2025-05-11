@@ -1,4 +1,4 @@
-output "db_name" {
+output "cluster_name" {
   value = mongodbatlas_advanced_cluster.this.name
 }
 
