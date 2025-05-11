@@ -3,19 +3,19 @@ locals {
     posting-service = {
       repository_path = "jyoliar-careerhub/careerhub-posting-service"
       mongodb = {
-        collection_name = "posting"
+        database_name = "posting"
       }
     }
     review-service = {
       repository_path = "jyoliar-careerhub/careerhub-review-service"
       mongodb = {
-        collection_name = "review"
+        database_name = "review"
       }
     }
     userinfo-service = {
       repository_path = "jyoliar-careerhub/careerhub-userinfo-service"
       mongodb = {
-        collection_name = "userinfo"
+        database_name = "userinfo"
       }
     }
     posting-provider = {
@@ -62,18 +62,18 @@ module "code_pipeline" {
   connection_arn = aws_codestarconnections_connection.this.arn
 }
 
-module "pod_identity" {
+module "role_for_careerhub_sa" {
   for_each = {
     for k, v in local.code_pipelines : k => v
     if contains(keys(v), "mongodb")
   }
-  source = "../_modules/pod_identity"
+  source = "../_modules/role_for_sa"
 
 
-  name                 = "${var.env}-${each.key}"
-  namespace            = "${var.env}-careerhub"
-  service_account_name = each.key
-  cluster_arn          = local.eks_outputs.eks_cluster_arn
+  name                  = "${var.env}-${each.key}"
+  namespace             = "${var.env}-careerhub"
+  service_account_name  = each.key
+  eks_oidc_provider_arn = local.eks_outputs.eks_oidc_provider_arn
 }
 
 
@@ -84,15 +84,18 @@ resource "mongodbatlas_database_user" "this" {
   }
 
   project_id = local.mongodb_outputs.project_id
-  username   = module.pod_identity[each.key].role_arn
+  username   = module.role_for_careerhub_sa[each.key].role_arn
 
   auth_database_name = "$external"
   aws_iam_type       = "ROLE"
 
   roles {
-    role_name       = "readWrite"
-    database_name   = local.mongodb_outputs.mongodb_database_name
-    collection_name = each.value.mongodb.collection_name
+    role_name     = "readWrite"
+    database_name = each.value.mongodb.database_name
+  }
+  scopes {
+    name = local.mongodb_outputs.cluster_name
+    type = "CLUSTER"
   }
 }
 
@@ -100,7 +103,7 @@ resource "mongodbatlas_database_user" "this" {
 # 현재 워크스페이스에서 data로 가져와야 함
 data "mongodbatlas_advanced_cluster" "this" {
   project_id = local.mongodb_outputs.project_id
-  name       = local.mongodb_outputs.mongodb_database_name
+  name       = local.mongodb_outputs.cluster_name
 }
 
 resource "aws_ssm_parameter" "mongodb_secret" {
@@ -112,8 +115,8 @@ resource "aws_ssm_parameter" "mongodb_secret" {
   name = "/${local.eks_outputs.eks_cluster_name}/careerhub/${var.env}/${each.key}/mongodb"
   type = "String"
   value = jsonencode({
-    endpoint   = data.mongodbatlas_advanced_cluster.this.connection_strings[0].private_endpoint[0].srv_connection_string
-    collection = each.value.mongodb.collection_name
+    endpoint = data.mongodbatlas_advanced_cluster.this.connection_strings[0].private_endpoint[0].srv_connection_string
+    database = each.value.mongodb.database_name
   })
   description = "MongoDB Atlas secret for ${each.key} service"
 }
