@@ -15,5 +15,6 @@ variable "service_account_name" {
 }
 
 variable "policy_arn" {
-  type = string
+  type    = string
+  default = ""
 }
