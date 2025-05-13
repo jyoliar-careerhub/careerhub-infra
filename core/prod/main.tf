@@ -36,6 +36,9 @@ locals {
         database_name = "auth"
       }
     }
+    frontend = {
+      repository_path = "jyoliar-careerhub/Careerhub-Front"
+    }
   }
 }
 
