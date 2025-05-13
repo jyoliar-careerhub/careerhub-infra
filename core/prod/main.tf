@@ -32,6 +32,9 @@ locals {
     }
     auth-service = {
       repository_path = "jyoliar-careerhub/auth-service"
+      mysql = {
+        database_name = "auth"
+      }
     }
   }
 }
@@ -117,6 +120,22 @@ resource "aws_ssm_parameter" "mongodb_secret" {
   value = jsonencode({
     endpoint = data.mongodbatlas_advanced_cluster.this.connection_strings[0].private_endpoint[0].srv_connection_string
     database = each.value.mongodb.database_name
+  })
+  description = "MongoDB Atlas secret for ${each.key} service"
+}
+
+resource "aws_ssm_parameter" "mysql_secret" {
+  for_each = {
+    for k, v in local.code_pipelines : k => v
+    if contains(keys(v), "mysql")
+  }
+
+  name = "/${local.eks_outputs.eks_cluster_name}/careerhub/${var.env}/${each.key}/mysql"
+  type = "String"
+  value = jsonencode({
+    DB_HOST = local.mysql_outputs.endpoint
+    DB_NAME = each.value.mysql.database_name
+    DB_PORT = local.mysql_outputs.port
   })
   description = "MongoDB Atlas secret for ${each.key} service"
 }
