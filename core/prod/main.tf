@@ -151,6 +151,9 @@ module "role_for_sa" {
   eks_oidc_provider_arn = local.eks_outputs.eks_oidc_provider_arn
   namespace             = "${var.env}-careerhub"
   service_account_name  = "careerhub-secrets-reader"
+}
 
+resource "aws_iam_role_policy_attachment" "careerhub-secrets-reader" {
+  role       = module.role_for_sa.role_name
   policy_arn = aws_iam_policy.careerhub-secrets-reader.arn
 }
