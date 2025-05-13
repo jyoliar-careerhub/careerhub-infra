@@ -139,6 +139,19 @@ resource "aws_iam_policy" "careerhub-secrets-reader" {
         Resource = [
           "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${local.eks_outputs.eks_cluster_name}/careerhub/*"
         ]
+      },
+      {
+        Sid    = "AllowSecretsManager"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetResourcePolicy",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:ListSecretVersionIds"
+        ]
+        Resource = [
+          local.mysql_outputs.user_secret_arn,
+        ]
       }
     ]
   })
