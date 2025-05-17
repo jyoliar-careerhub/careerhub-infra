@@ -29,3 +29,8 @@ resource "aws_security_group_rule" "allow_mysql" {
   cidr_blocks       = [data.aws_vpc.this.cidr_block]
   security_group_id = each.value.security_group_id
 }
+
+import {
+  to = aws_security_group_rule.allow_mysql["user"]
+  id = "sg-0a4679cb65807b429_ingress_tcp_3306_3306_10.0.0.0/16"
+}
