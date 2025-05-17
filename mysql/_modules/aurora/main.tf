@@ -32,7 +32,7 @@ resource "aws_rds_cluster" "this" {
   serverlessv2_scaling_configuration {
     max_capacity             = 32
     min_capacity             = 0
-    seconds_until_auto_pause = 300
+    seconds_until_auto_pause = 3600 # 1 hour
   }
 }
 resource "aws_rds_cluster_instance" "this" {

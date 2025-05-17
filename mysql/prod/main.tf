@@ -14,10 +14,9 @@ module "mysql" {
   subnet_ids = local.careerhub_subnets_outputs.private_subnet_ids
 }
 
-data "aws_subnet" "this" {
-  for_each = toset(concat(local.careerhub_subnets_outputs.private_subnet_ids, local.careerhub_subnets_outputs.public_subnet_ids))
 
-  id = each.value
+data "aws_vpc" "this" {
+  id = local.careerhub_subnets_outputs.vpc_id
 }
 
 resource "aws_security_group_rule" "allow_mysql" {
@@ -27,7 +26,6 @@ resource "aws_security_group_rule" "allow_mysql" {
   from_port         = 3306
   to_port           = 3306
   protocol          = "tcp"
-  cidr_blocks       = [for subnet in data.aws_subnet.this : subnet.cidr_block]
-  ipv6_cidr_blocks  = [for subnet in data.aws_subnet.this : subnet.ipv6_cidr_block if subnet.ipv6_cidr_block != null && subnet.ipv6_cidr_block != ""]
+  cidr_blocks       = [data.aws_vpc.this.cidr_block]
   security_group_id = each.value.security_group_id
 }
