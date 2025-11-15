@@ -68,65 +68,6 @@ module "code_pipeline" {
   connection_arn = aws_codestarconnections_connection.this.arn
 }
 
-module "role_for_careerhub_sa" {
-  for_each = {
-    for k, v in local.code_pipelines : k => v
-    if contains(keys(v), "mongodb")
-  }
-  source = "../_modules/role_for_sa"
-
-
-  name                  = "${var.env}-${each.key}"
-  namespace             = "${var.env}-careerhub"
-  service_account_name  = each.key
-  eks_oidc_provider_arn = local.eks_outputs.eks_oidc_provider_arn
-}
-
-
-resource "mongodbatlas_database_user" "this" {
-  for_each = {
-    for k, v in local.code_pipelines : k => v
-    if contains(keys(v), "mongodb")
-  }
-
-  project_id = local.mongodb_outputs.project_id
-  username   = module.role_for_careerhub_sa[each.key].role_arn
-
-  auth_database_name = "$external"
-  aws_iam_type       = "ROLE"
-
-  roles {
-    role_name     = "readWrite"
-    database_name = each.value.mongodb.database_name
-  }
-  scopes {
-    name = local.mongodb_outputs.cluster_name
-    type = "CLUSTER"
-  }
-}
-
-# mongodb privatelink가 생성된 이후 private endpoint가 생성되기 때문에
-# 현재 워크스페이스에서 data로 가져와야 함
-data "mongodbatlas_advanced_cluster" "this" {
-  project_id = local.mongodb_outputs.project_id
-  name       = local.mongodb_outputs.cluster_name
-}
-
-resource "aws_ssm_parameter" "mongodb_secret" {
-  for_each = {
-    for k, v in local.code_pipelines : k => v
-    if contains(keys(v), "mongodb")
-  }
-
-  name = "/${local.eks_outputs.eks_cluster_name}/careerhub/${var.env}/${each.key}/mongodb"
-  type = "String"
-  value = jsonencode({
-    endpoint = data.mongodbatlas_advanced_cluster.this.connection_strings[0].private_endpoint[0].srv_connection_string
-    database = each.value.mongodb.database_name
-  })
-  description = "MongoDB Atlas secret for ${each.key} service"
-}
-
 resource "aws_ssm_parameter" "mysql_secret" {
   for_each = {
     for k, v in local.code_pipelines : k => v
