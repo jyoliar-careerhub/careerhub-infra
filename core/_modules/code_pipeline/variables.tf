@@ -31,3 +31,29 @@ variable "subnet_arns" {
 variable "connection_arn" {
   type = string
 }
+
+variable "codebuild_role_arn" {
+  type = string
+}
+
+variable "codepipeline_role_arn" {
+  type = string
+
+}
+
+variable "region" {
+  type = string
+}
+
+variable "codebuild_bucket_id" {
+  type = string
+
+}
+
+variable "codebuild_bucket" {
+  type = string
+}
+
+variable "codebuild_sg_id" {
+  type = string
+}
