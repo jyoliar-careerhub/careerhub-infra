@@ -16,118 +16,7 @@ locals {
   codebuild_name = "${var.name}-cb"
 }
 
-data "aws_iam_policy_document" "codebuild_policy_doc" {
-  statement {
-    effect = "Allow"
 
-    actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents",
-    ]
-
-    resources = ["*"]
-  }
-
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "ec2:CreateNetworkInterface",
-      "ec2:DescribeDhcpOptions",
-      "ec2:DescribeNetworkInterfaces",
-      "ec2:DeleteNetworkInterface",
-      "ec2:DescribeSubnets",
-      "ec2:DescribeSecurityGroups",
-      "ec2:DescribeVpcs",
-    ]
-
-    resources = ["*"]
-  }
-
-  statement {
-    effect    = "Allow"
-    actions   = ["ec2:CreateNetworkInterfacePermission"]
-    resources = ["arn:aws:ec2:*:*:network-interface/*"]
-
-    condition {
-      test     = "ArnEquals"
-      variable = "ec2:Subnet"
-
-      values = var.subnet_arns
-    }
-
-    condition {
-      test     = "StringEquals"
-      variable = "ec2:AuthorizedService"
-      values   = ["codebuild.amazonaws.com"]
-    }
-  }
-
-  statement {
-    effect = "Allow"
-    actions = [
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:CompleteLayerUpload",
-      "ecr:GetAuthorizationToken",
-      "ecr:InitiateLayerUpload",
-      "ecr:PutImage",
-      "ecr:UploadLayerPart"
-    ]
-    resources = ["*"]
-  }
-
-  statement {
-    effect  = "Allow"
-    actions = ["s3:*"]
-    resources = [
-      aws_s3_bucket.codebuild_bucket.arn,
-      "${aws_s3_bucket.codebuild_bucket.arn}/*",
-    ]
-  }
-
-}
-
-data "aws_iam_policy_document" "codebuild_assume_role_policy_doc" {
-  statement {
-    effect = "Allow"
-
-    principals {
-      type        = "Service"
-      identifiers = ["codebuild.amazonaws.com"]
-    }
-
-    actions = ["sts:AssumeRole"]
-  }
-}
-
-resource "aws_iam_role" "codebuild_role" {
-  name               = local.codebuild_name
-  assume_role_policy = data.aws_iam_policy_document.codebuild_assume_role_policy_doc.json
-}
-
-resource "aws_iam_role_policy" "codebuild_role_policy" {
-  role   = aws_iam_role.codebuild_role.name
-  policy = data.aws_iam_policy_document.codebuild_policy_doc.json
-}
-
-resource "aws_s3_bucket" "codebuild_bucket" {
-  bucket        = "${local.codebuild_name}-${random_string.bucket_suffix.result}"
-  force_destroy = true
-}
-
-resource "aws_s3_bucket_lifecycle_configuration" "codebuild_bucket" {
-  bucket = aws_s3_bucket.codebuild_bucket.id
-
-  rule {
-    id     = "expiration"
-    status = "Enabled"
-
-    expiration {
-      days = 3
-    }
-  }
-}
 
 locals {
   codebuild_enviroment = {
@@ -148,7 +37,7 @@ resource "aws_codebuild_project" "codebuild_project" {
   name          = local.codebuild_name
   description   = "CodeBuild for ${var.name}"
   build_timeout = 30
-  service_role  = aws_iam_role.codebuild_role.arn
+  service_role  = var.codebuild_role_arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -170,19 +59,19 @@ resource "aws_codebuild_project" "codebuild_project" {
 
     s3_logs {
       status   = "ENABLED"
-      location = "${aws_s3_bucket.codebuild_bucket.id}/build-log"
+      location = "${var.codebuild_bucket_id}/build-log/${local.codebuild_name}/"
     }
   }
 
   cache {
     type     = "S3"
-    location = aws_s3_bucket.codebuild_bucket.bucket
+    location = var.codebuild_bucket
   }
 
   source {
     type = "CODEPIPELINE"
     buildspec = templatefile("${path.module}/buildspec_template.yml", {
-      region          = data.aws_region.current.name
+      region          = var.region
       ecr_domain      = split("/", aws_ecr_repository.ecr_repo.repository_url)[0]
       image_repo_name = aws_ecr_repository.ecr_repo.name
     })
@@ -194,27 +83,11 @@ resource "aws_codebuild_project" "codebuild_project" {
     subnets = local.subnet_ids
 
     security_group_ids = [
-      aws_security_group.codebuild_sg.id,
+      var.codebuild_sg_id
     ]
   }
 }
 
-data "aws_region" "current" {}
-
-resource "aws_security_group" "codebuild_sg" {
-  name        = local.codebuild_name
-  description = "Security group for codebuild"
-  vpc_id      = var.vpc_id
-}
-
-resource "aws_security_group_rule" "allow_all_traffic" {
-  security_group_id = aws_security_group.codebuild_sg.id
-  type              = "egress"
-  from_port         = 0
-  to_port           = 0
-  protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
-}
 ### end define codebuild
 
 
@@ -230,75 +103,13 @@ resource "random_string" "bucket_suffix" {
   special = false
 }
 
-data "aws_iam_policy_document" "codepipeline_assume_role_doc" {
-
-
-  statement {
-    effect = "Allow"
-
-    principals {
-      type        = "Service"
-      identifiers = ["codepipeline.amazonaws.com"]
-    }
-
-    actions = ["sts:AssumeRole"]
-  }
-}
-
-resource "aws_iam_role" "codepipeline_role" {
-  name               = local.codepipeline_name
-  assume_role_policy = data.aws_iam_policy_document.codepipeline_assume_role_doc.json
-}
-
-data "aws_iam_policy_document" "codepipeline_policy_doc" {
-  statement {
-    effect    = "Allow"
-    actions   = ["codestar-connections:UseConnection"]
-    resources = [var.connection_arn]
-  }
-
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "codebuild:BatchGetBuilds",
-      "codebuild:StartBuild",
-    ]
-
-    resources = ["*"]
-  }
-
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "s3:GetObject",
-      "s3:GetObjectVersion",
-      "s3:GetBucketVersioning",
-      "s3:PutObjectAcl",
-      "s3:PutObject",
-    ]
-
-    resources = [
-      aws_s3_bucket.codebuild_bucket.arn,
-      "${aws_s3_bucket.codebuild_bucket.arn}/*"
-    ]
-  }
-}
-
-resource "aws_iam_role_policy" "codepipeline_policy" {
-  name   = local.codepipeline_name
-  role   = aws_iam_role.codepipeline_role.id
-  policy = data.aws_iam_policy_document.codepipeline_policy_doc.json
-}
-
 
 resource "aws_codepipeline" "codepipeline" {
   name     = local.codepipeline_name
-  role_arn = aws_iam_role.codepipeline_role.arn
+  role_arn = var.codepipeline_role_arn
 
   artifact_store {
-    location = aws_s3_bucket.codebuild_bucket.bucket
+    location = var.codebuild_bucket
     type     = "S3"
   }
 

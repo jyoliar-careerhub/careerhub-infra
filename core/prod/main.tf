@@ -53,11 +53,22 @@ data "aws_subnet" "private_subnet_ids" {
   id = local.careerhub_subnets_outputs.private_subnet_ids[count.index]
 }
 
+module "code_pipeline_config" {
+  source = "../_modules/code_pipeline_config"
+
+  env = var.env
+
+  vpc_id      = local.careerhub_subnets_outputs.vpc_id
+  subnet_arns = [for subnet in data.aws_subnet.private_subnet_ids : subnet.arn]
+}
+
 module "code_pipeline" {
   source = "../_modules/code_pipeline"
 
   for_each = local.code_pipelines
 
+
+  region          = var.region
   name            = "${var.env}-${each.key}"
   build_arch      = "arm64"
   repository_path = each.value.repository_path
@@ -66,6 +77,12 @@ module "code_pipeline" {
   vpc_id         = local.careerhub_subnets_outputs.vpc_id
   subnet_arns    = [for subnet in data.aws_subnet.private_subnet_ids : subnet.arn]
   connection_arn = aws_codestarconnections_connection.this.arn
+
+  codepipeline_role_arn = module.code_pipeline_config.codepipeline_role_arn
+  codebuild_bucket      = module.code_pipeline_config.codebuild_bucket
+  codebuild_bucket_id   = module.code_pipeline_config.codebuild_bucket_id
+  codebuild_role_arn    = module.code_pipeline_config.codebuild_role_arn
+  codebuild_sg_id       = module.code_pipeline_config.codebuild_sg_id
 }
 
 resource "aws_ssm_parameter" "mysql_secret" {
